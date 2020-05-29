@@ -1,0 +1,182 @@
+---
+title: "MIS 510 Portfolio Project Option 1"
+author: "Charles Busby"
+date: "9/22/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction to project
+
+For the final project in MIS510 I chose to compete a classification tree and neural network for the German credit data.  Over the course of this paper I plan to demonstrate a Classification tree and Neural Network that will successfully predict if an individual has had higher education.
+
+## Libraries
+
+This first section opens connects to the libraries that will be needed.
+
+```{r}
+library(arules)
+library(rpart)
+library(rpart.plot)
+library(caret)
+library(neuralnet)
+library(nnet)
+```
+
+## Set the Working Directory
+
+This section connect the working directory to the data and file storage location.
+
+```{r}
+setwd("C:/Users/buzzt/Desktop/CSU GLObal/MIS510 DAta mining and viz/Final")
+```
+
+## Opens the Initial Data File
+
+This line of code opened the initial data file.
+
+``` {r}
+GC.df <- read.csv("GermanCredit.csv", header = TRUE)
+```
+
+## Gives Data Summary
+
+This section summarized the data.  The first line give returns the first six lines of the data table.  After reviewing this I realized that I needed more information.  The second line give a more detailed summary.  It looks at each variable and gives the mean, the standard deviation, the minimum, the maximum, the medium, the number of observations, and finally a count of the missing variables.  During this new summary I also round all of the functions to only two decimal places.
+
+```{r}
+head(GC.df)
+data.frame(mean=round(sapply(GC.df, mean, na.rm=TRUE),2),
+           #gave the average for the data 
+           sd=round(sapply(GC.df, sd, na.rm = TRUE),2), 
+           #gave the standard deviation for the table
+           min=round(sapply(GC.df, min, na.rm = TRUE),2), 
+           #gave the minimum for the table
+           max=round(sapply(GC.df, max, na.rm = TRUE),2), 
+           #gave the max for the table
+           median=round(sapply(GC.df, median, na.rm = TRUE),2), 
+           #gavet he median for the table
+           length=sapply(GC.df, length), 
+           #gives the number of entries
+           miss.val=sapply(GC.df, function(x) sum(length(which(is.na(x))))))
+```
+
+## Column Removal
+
+This next section removes the unnecessary first column of the data pull.  
+
+```{r}
+GC.df <- GC.df[,-c(1)]
+```
+
+## Split the Data
+
+This section splits the data into a training and validation set.  The training set consist of 60 percent of the initial information.
+
+```{r}
+set.seed(1) #sets seed fr testing
+train.index <- sample(c(1:dim(GC.df)[1]), dim(GC.df)[1]*0.6) # sets the training data for 60%
+train.df <- GC.df[train.index, ] # creates the data frame for the test data
+valid.df <- GC.df[-train.index, ] # Creates the data frame for the validation data
+```
+
+## Classification Tree
+
+This section placed both the validation data and the training data into Classification trees. 
+
+```{r}
+Class.tree.train <- rpart(EDUCATION ~., data = train.df, method = "class")
+Class.tree.Valid <- rpart(EDUCATION ~., data = valid.df, method = "class")
+```
+
+## Classification Tree Plot 
+
+Below is the code to present the classification tree for the model.
+
+``` {r, echo=FALSE}
+prp(Class.tree.train, type = 1, extra = 1, under = TRUE, split.font = 1, varlen = -10)
+```
+
+## Classification Predictive Model
+
+Next I built a predictive model to tell if the individual has higher education.  This was followed by the same formula to validate the predictions with the other data set.  
+
+```{r}
+Class.tree.train.Pred <- predict(Class.tree.train, train.df, type = "class")
+#creates the prediction class model
+Class.tree.Valid.Pred <- predict(Class.tree.Valid, valid.df, type = "class")
+#creates the prediction model for the validation data
+```
+
+## Validation of Predictive Model
+
+To tet the models I compared two confusion matrixes.  The first resulted in a 96% accuracy while the second resulted in a 96.5%.  With this level of accuracy I feel comfortable with the model.
+
+```{r}
+confusionMatrix(Class.tree.train.Pred, as.factor(train.df$EDUCATION))
+confusionMatrix(Class.tree.Valid.Pred, as.factor(valid.df$EDUCATION))
+```
+
+## Data Normilization
+
+After completing the classification tree, I set off to create a neural network of the same data.  Before I could move forward I want ed to normalize the data for ore efficient viewing later.  These lines of code not only create a new data frame but also replace the non-categorical data with values that are normalized between 0 and 1 using MinMax Normalization.
+
+```{r}
+NN.df <- GC.df
+NN.df$CHK_ACCT <- (NN.df$CHK_ACCT - min(NN.df$CHK_ACCT))/(max(NN.df$CHK_ACCT) - min(NN.df$CHK_ACCT))
+NN.df$DURATION <- (NN.df$DURATION -min(NN.df$DURATION))/(max(NN.df$DURATION) - min(NN.df$DURATION))
+NN.df$HISTORY <- (NN.df$HISTORY - min(NN.df$HISTORY))/(max(NN.df$HISTORY) - min(NN.df$HISTORY))
+NN.df$AMOUNT <- (NN.df$AMOUNT - min(NN.df$AMOUNT))/(max(NN.df$AMOUNT) - min(NN.df$AMOUNT))
+NN.df$EMPLOYMENT <- (NN.df$EMPLOYMENT - min(NN.df$EMPLOYMENT))/(max(NN.df$EMPLOYMENT) - min(NN.df$EMPLOYMENT))
+NN.df$INSTALL_RATE <- (NN.df$INSTALL_RATE - min(NN.df$INSTALL_RATE))/(max(NN.df$INSTALL_RATE) - min(NN.df$INSTALL_RATE))
+NN.df$PRESENT_RESIDENT <- (NN.df$PRESENT_RESIDENT - min(NN.df$PRESENT_RESIDENT))/(max(NN.df$PRESENT_RESIDENT) - min(NN.df$PRESENT_RESIDENT))
+NN.df$AGE <- (NN.df$AGE - min(NN.df$AGE))/(max(NN.df$AGE) - min(NN.df$AGE))
+NN.df$NUM_CREDITS <- (NN.df$NUM_CREDITS - min(NN.df$NUM_CREDITS))/(max(NN.df$NUM_CREDITS) - min(NN.df$NUM_CREDITS))
+NN.df$JOB <- (NN.df$JOB - min(NN.df$JOB))/(max(NN.df$JOB) - min(NN.df$JOB))
+NN.df$NUM_DEPENDENTS <- (NN.df$NUM_DEPENDENTS - min(NN.df$NUM_DEPENDENTS))/(max(NN.df$NUM_DEPENDENTS) - min(NN.df$NUM_DEPENDENTS))
+```
+
+## Second Data Test Sets
+
+After normalizing the data I needed to split it up into a new training and validation set.
+
+```{r}
+set.seed(2) #sets seed fr testing 
+NN.Index <- sample(c(1:dim(NN.df)[1]), dim(NN.df)[1]*0.6)
+Training = NN.df[NN.Index, ]
+Validation = NN.df[-NN.Index, ]
+```
+
+## Neural Network
+
+Now that the data has been prepped and separated.  I can create the neural network.  I chose to take a look at the higher education compared to Job status, Age, If the person owns their residence, the amount they make, how long they have had a lone, if they are employed, are they a present resident, rate of return on their checking account, and credit history, and install rate.  This combined with 2 hidden nodes should create a strong neural network.  
+
+```{r}
+nn <- neuralnet(EDUCATION ~ JOB + AGE  + OWN_RES + AMOUNT + DURATION + EMPLOYMENT + PRESENT_RESIDENT + CHK_ACCT + DURATION + HISTORY + INSTALL_RATE,
+                data = Training, 
+                linear.output = F, 
+                hidden = 2)
+```
+
+## Display the Network
+
+The next step was to view the network.
+
+```{r, echo=FALSE}
+plot(nn, rep = "best")
+```
+
+## Nerual Network Test
+
+Now that the network is created and I need to test and see if they can accurately predict the education of the individual.  To do this I created a prediction model and then measured both the training data and the validation data against this.  Both tests displayed high accuracy and sensitivity.
+
+```{r}
+Training.Prediction = compute(nn, Training)
+Training.class = apply(Training.Prediction$net.result, 1, which.max)-1
+confusionMatrix(as.factor(Training.class), as.factor(Training$EDUCATION))
+Validation.Prediction = compute(nn, Validation)
+Validation.class = apply(Validation.Prediction$net.result, 1, which.max)-1
+confusionMatrix(as.factor(Validation.class), as.factor(Validation$EDUCATION))
+```
