@@ -1,2 +1,2 @@
-# Housing
-This Repository hold a general analysis of the Denver housing market.  From time to time I will come back and update this.
+# Portfolio
+This repository will hold past and current project that demenstrate my skills.  Time permiting I will come back and update these to improve the quality and funcionality.  
